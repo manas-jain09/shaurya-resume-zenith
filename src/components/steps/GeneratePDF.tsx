@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const GeneratePDF = () => {
   const { resumeData, setCurrentStep } = useResume();
@@ -18,8 +18,7 @@ const GeneratePDF = () => {
     if (!resumeRef.current) return;
 
     try {
-      toast({
-        title: "Generating PDF",
+      toast("Generating PDF", {
         description: "Please wait while we generate your PDF...",
       });
       
@@ -69,7 +68,7 @@ const GeneratePDF = () => {
         const sourceY = i * pdfHeight / ratio;
         const sourceHeight = Math.min(pdfHeight / ratio, imgHeight - sourceY);
         
-        // Fix: Remove the 10th argument and use proper options structure
+        // Fix: Use only valid properties for the ImageOptions object
         pdf.addImage({
           imageData: imgData,
           format: "PNG", 
@@ -78,26 +77,20 @@ const GeneratePDF = () => {
           width: imgWidth * ratio, 
           height: imgHeight * ratio,
           compression: "FAST",
-          rotation: 0,
-          sourceX: 0,
-          sourceY: sourceY,
-          sourceWidth: imgWidth,
-          sourceHeight: sourceHeight
+          rotation: 0
         });
       }
       
       // Save the file
       pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
       
-      // Fix: Use a valid variant - change "success" to "default"
-      toast({
-        title: "PDF Generated",
+      // Fix: Use the correct toast format for sonner
+      toast("PDF Generated", {
         description: "Your resume PDF has been successfully generated!",
       });
     } catch (error) {
       console.error("PDF generation error:", error);
-      toast({
-        title: "PDF Generation Failed",
+      toast("PDF Generation Failed", {
         description: "There was an error generating your PDF. Please try again.",
       });
     }
