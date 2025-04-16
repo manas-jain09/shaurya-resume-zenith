@@ -12,7 +12,6 @@ import AchievementsForm from "./steps/AchievementsForm";
 import ActivitiesForm from "./steps/ActivitiesForm";
 import HobbiesForm from "./steps/HobbiesForm";
 import GeneratePDF from "./steps/GeneratePDF";
-import { Button } from "./ui/button";
 
 const ResumeBuilder = () => {
   const { currentStep, setCurrentStep, resumeData } = useResume();

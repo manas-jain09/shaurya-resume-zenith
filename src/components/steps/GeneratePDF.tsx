@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
+import { ExternalLink } from "lucide-react";
 
 const GeneratePDF = () => {
   const { resumeData, setCurrentStep } = useResume();
@@ -85,6 +86,628 @@ const GeneratePDF = () => {
     }
   };
 
+  const openPreviewInNewTab = () => {
+    // Serialize the resume data to pass to the new window
+    const resumeDataString = JSON.stringify(resumeData);
+    
+    // Open a new window and write the HTML content
+    const newWindow = window.open('', '_blank');
+    if (!newWindow) {
+      toast("Preview Failed", {
+        description: "Could not open a new window. Please check your browser settings.",
+      });
+      return;
+    }
+
+    // Create HTML content for the new window
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${resumeData.personalInfo.firstName} ${resumeData.personalInfo.lastName} - Resume</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+          }
+          
+          body {
+            background-color: #f5f5f5;
+            padding: 2rem;
+          }
+          
+          .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+          }
+          
+          .header {
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+          }
+          
+          h1 {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+          }
+          
+          .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.875rem;
+          }
+          
+          .contact-item {
+            display: flex;
+            align-items: center;
+          }
+          
+          .section {
+            margin-bottom: 1.5rem;
+          }
+          
+          .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #2563eb;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.25rem;
+          }
+          
+          .item {
+            margin-bottom: 0.75rem;
+          }
+          
+          .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+          }
+          
+          .item-title {
+            font-weight: 500;
+            font-size: 1rem;
+          }
+          
+          .item-date {
+            font-size: 0.75rem;
+            color: #4b5563;
+          }
+          
+          .item-subtitle {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+          }
+          
+          .item-details {
+            font-size: 0.875rem;
+          }
+          
+          ul {
+            padding-left: 1.5rem;
+          }
+          
+          li {
+            font-size: 0.875rem;
+            line-height: 1.4;
+            margin-bottom: 0.25rem;
+          }
+          
+          .technologies {
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+          }
+          
+          .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+            list-style-type: none;
+            padding-left: 0;
+          }
+          
+          .skill-item {
+            background-color: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+          }
+          
+          .print-button {
+            display: block;
+            margin: 1rem auto;
+            padding: 0.5rem 1rem;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            font-weight: 500;
+            cursor: pointer;
+          }
+          
+          @media print {
+            body {
+              background: none;
+              padding: 0;
+            }
+            
+            .container {
+              box-shadow: none;
+              max-width: 100%;
+              padding: 0.5cm;
+            }
+            
+            .print-button {
+              display: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <button class="print-button" onclick="window.print()">Print Resume</button>
+        <div class="container">
+          <div id="resume-content"></div>
+        </div>
+        
+        <script>
+          const resumeData = ${resumeDataString};
+          
+          function formatDate(dateString) {
+            if (!dateString) return "";
+            const date = new Date(dateString);
+            return date.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+            });
+          }
+          
+          function buildResume() {
+            const container = document.getElementById("resume-content");
+            
+            // Header Section
+            const header = document.createElement("div");
+            header.className = "header";
+            
+            const name = document.createElement("h1");
+            name.textContent = \`\${resumeData.personalInfo.firstName} \${resumeData.personalInfo.lastName}\`;
+            header.appendChild(name);
+            
+            const contactInfo = document.createElement("div");
+            contactInfo.className = "contact-info";
+            
+            if (resumeData.personalInfo.email) {
+              const email = document.createElement("span");
+              email.className = "contact-item";
+              email.textContent = resumeData.personalInfo.email;
+              contactInfo.appendChild(email);
+            }
+            
+            if (resumeData.personalInfo.phone) {
+              const phone = document.createElement("span");
+              phone.className = "contact-item";
+              phone.textContent = resumeData.personalInfo.phone;
+              contactInfo.appendChild(phone);
+            }
+            
+            if (resumeData.personalInfo.linkedin) {
+              const linkedin = document.createElement("span");
+              linkedin.className = "contact-item";
+              linkedin.textContent = resumeData.personalInfo.linkedin;
+              contactInfo.appendChild(linkedin);
+            }
+            
+            if (resumeData.personalInfo.github) {
+              const github = document.createElement("span");
+              github.className = "contact-item";
+              github.textContent = resumeData.personalInfo.github;
+              contactInfo.appendChild(github);
+            }
+            
+            if (resumeData.personalInfo.website) {
+              const website = document.createElement("span");
+              website.className = "contact-item";
+              website.textContent = resumeData.personalInfo.website;
+              contactInfo.appendChild(website);
+            }
+            
+            header.appendChild(contactInfo);
+            container.appendChild(header);
+            
+            // Summary Section
+            if (resumeData.personalInfo.summary) {
+              const summarySection = document.createElement("div");
+              summarySection.className = "section";
+              
+              const summaryTitle = document.createElement("h2");
+              summaryTitle.className = "section-title";
+              summaryTitle.textContent = "Professional Summary";
+              summarySection.appendChild(summaryTitle);
+              
+              const summary = document.createElement("p");
+              summary.className = "item-details";
+              summary.textContent = resumeData.personalInfo.summary;
+              summarySection.appendChild(summary);
+              
+              container.appendChild(summarySection);
+            }
+            
+            // Education Section
+            if (resumeData.education.length > 0) {
+              const educationSection = document.createElement("div");
+              educationSection.className = "section";
+              
+              const educationTitle = document.createElement("h2");
+              educationTitle.className = "section-title";
+              educationTitle.textContent = "Education";
+              educationSection.appendChild(educationTitle);
+              
+              resumeData.education.forEach(edu => {
+                const eduItem = document.createElement("div");
+                eduItem.className = "item";
+                
+                const eduHeader = document.createElement("div");
+                eduHeader.className = "item-header";
+                
+                const degree = document.createElement("h3");
+                degree.className = "item-title";
+                degree.textContent = edu.degree;
+                eduHeader.appendChild(degree);
+                
+                if (edu.startDate || edu.endDate) {
+                  const dates = document.createElement("span");
+                  dates.className = "item-date";
+                  dates.textContent = \`\${formatDate(edu.startDate)} - \${edu.endDate ? formatDate(edu.endDate) : "Present"}\`;
+                  eduHeader.appendChild(dates);
+                }
+                
+                eduItem.appendChild(eduHeader);
+                
+                const institution = document.createElement("p");
+                institution.className = "item-subtitle";
+                institution.textContent = \`\${edu.institution}\${edu.location ? \`, \${edu.location}\` : ""}\`;
+                eduItem.appendChild(institution);
+                
+                if (edu.grade) {
+                  const grade = document.createElement("p");
+                  grade.className = "item-details";
+                  grade.textContent = \`Grade: \${edu.grade}\`;
+                  eduItem.appendChild(grade);
+                }
+                
+                educationSection.appendChild(eduItem);
+              });
+              
+              container.appendChild(educationSection);
+            }
+            
+            // Experience Section
+            if (resumeData.experience.length > 0) {
+              const experienceSection = document.createElement("div");
+              experienceSection.className = "section";
+              
+              const experienceTitle = document.createElement("h2");
+              experienceTitle.className = "section-title";
+              experienceTitle.textContent = "Experience";
+              experienceSection.appendChild(experienceTitle);
+              
+              resumeData.experience.forEach(exp => {
+                const expItem = document.createElement("div");
+                expItem.className = "item";
+                
+                const expHeader = document.createElement("div");
+                expHeader.className = "item-header";
+                
+                const title = document.createElement("h3");
+                title.className = "item-title";
+                title.textContent = exp.title;
+                expHeader.appendChild(title);
+                
+                if (exp.startDate || exp.endDate) {
+                  const dates = document.createElement("span");
+                  dates.className = "item-date";
+                  dates.textContent = \`\${formatDate(exp.startDate)} - \${exp.endDate ? formatDate(exp.endDate) : "Present"}\`;
+                  expHeader.appendChild(dates);
+                }
+                
+                expItem.appendChild(expHeader);
+                
+                const company = document.createElement("p");
+                company.className = "item-subtitle";
+                company.textContent = \`\${exp.company}\${exp.location ? \`, \${exp.location}\` : ""}\`;
+                expItem.appendChild(company);
+                
+                if (exp.description && exp.description.length > 0) {
+                  const descList = document.createElement("ul");
+                  exp.description.forEach(desc => {
+                    const descItem = document.createElement("li");
+                    descItem.textContent = desc;
+                    descList.appendChild(descItem);
+                  });
+                  expItem.appendChild(descList);
+                }
+                
+                if (exp.technologies && exp.technologies.length > 0) {
+                  const tech = document.createElement("p");
+                  tech.className = "technologies";
+                  tech.innerHTML = \`<strong>Technologies:</strong> \${exp.technologies.join(", ")}\`;
+                  expItem.appendChild(tech);
+                }
+                
+                experienceSection.appendChild(expItem);
+              });
+              
+              container.appendChild(experienceSection);
+            }
+            
+            // Projects Section
+            if (resumeData.projects.length > 0) {
+              const projectsSection = document.createElement("div");
+              projectsSection.className = "section";
+              
+              const projectsTitle = document.createElement("h2");
+              projectsTitle.className = "section-title";
+              projectsTitle.textContent = "Projects";
+              projectsSection.appendChild(projectsTitle);
+              
+              resumeData.projects.forEach(project => {
+                const projectItem = document.createElement("div");
+                projectItem.className = "item";
+                
+                const projectHeader = document.createElement("div");
+                projectHeader.className = "item-header";
+                
+                const title = document.createElement("h3");
+                title.className = "item-title";
+                title.textContent = project.title;
+                projectHeader.appendChild(title);
+                
+                if (project.startDate || project.endDate) {
+                  const dates = document.createElement("span");
+                  dates.className = "item-date";
+                  dates.textContent = \`\${formatDate(project.startDate)} - \${project.endDate ? formatDate(project.endDate) : "Present"}\`;
+                  projectHeader.appendChild(dates);
+                }
+                
+                projectItem.appendChild(projectHeader);
+                
+                const description = document.createElement("p");
+                description.className = "item-details";
+                description.textContent = project.description;
+                projectItem.appendChild(description);
+                
+                if (project.technologies && project.technologies.length > 0) {
+                  const tech = document.createElement("p");
+                  tech.className = "technologies";
+                  tech.innerHTML = \`<strong>Technologies:</strong> \${project.technologies.join(", ")}\`;
+                  projectItem.appendChild(tech);
+                }
+                
+                if (project.link) {
+                  const link = document.createElement("p");
+                  link.className = "technologies";
+                  link.innerHTML = \`<strong>Link:</strong> \${project.link}\`;
+                  projectItem.appendChild(link);
+                }
+                
+                projectsSection.appendChild(projectItem);
+              });
+              
+              container.appendChild(projectsSection);
+            }
+            
+            // Skills Section
+            if (resumeData.skills.length > 0) {
+              const skillsSection = document.createElement("div");
+              skillsSection.className = "section";
+              
+              const skillsTitle = document.createElement("h2");
+              skillsTitle.className = "section-title";
+              skillsTitle.textContent = "Skills";
+              skillsSection.appendChild(skillsTitle);
+              
+              const skillsList = document.createElement("ul");
+              skillsList.className = "skills-list";
+              
+              resumeData.skills.forEach(skill => {
+                const skillItem = document.createElement("li");
+                skillItem.className = "skill-item";
+                skillItem.textContent = skill.name;
+                skillsList.appendChild(skillItem);
+              });
+              
+              skillsSection.appendChild(skillsList);
+              container.appendChild(skillsSection);
+            }
+            
+            // Positions Section
+            if (resumeData.positions.length > 0) {
+              const positionsSection = document.createElement("div");
+              positionsSection.className = "section";
+              
+              const positionsTitle = document.createElement("h2");
+              positionsTitle.className = "section-title";
+              positionsTitle.textContent = "Positions of Responsibility";
+              positionsSection.appendChild(positionsTitle);
+              
+              resumeData.positions.forEach(position => {
+                const positionItem = document.createElement("div");
+                positionItem.className = "item";
+                
+                const positionHeader = document.createElement("div");
+                positionHeader.className = "item-header";
+                
+                const title = document.createElement("h3");
+                title.className = "item-title";
+                title.textContent = position.title;
+                positionHeader.appendChild(title);
+                
+                if (position.startDate || position.endDate) {
+                  const dates = document.createElement("span");
+                  dates.className = "item-date";
+                  dates.textContent = \`\${formatDate(position.startDate)} - \${position.endDate ? formatDate(position.endDate) : "Present"}\`;
+                  positionHeader.appendChild(dates);
+                }
+                
+                positionItem.appendChild(positionHeader);
+                
+                const organization = document.createElement("p");
+                organization.className = "item-subtitle";
+                organization.textContent = position.organization;
+                positionItem.appendChild(organization);
+                
+                if (position.description) {
+                  const description = document.createElement("p");
+                  description.className = "item-details";
+                  description.textContent = position.description;
+                  positionItem.appendChild(description);
+                }
+                
+                positionsSection.appendChild(positionItem);
+              });
+              
+              container.appendChild(positionsSection);
+            }
+            
+            // Achievements Section
+            if (resumeData.achievements.length > 0) {
+              const achievementsSection = document.createElement("div");
+              achievementsSection.className = "section";
+              
+              const achievementsTitle = document.createElement("h2");
+              achievementsTitle.className = "section-title";
+              achievementsTitle.textContent = "Achievements";
+              achievementsSection.appendChild(achievementsTitle);
+              
+              resumeData.achievements.forEach(achievement => {
+                const achievementItem = document.createElement("div");
+                achievementItem.className = "item";
+                
+                const achievementHeader = document.createElement("div");
+                achievementHeader.className = "item-header";
+                
+                const title = document.createElement("h3");
+                title.className = "item-title";
+                title.textContent = achievement.title;
+                achievementHeader.appendChild(title);
+                
+                if (achievement.date) {
+                  const date = document.createElement("span");
+                  date.className = "item-date";
+                  date.textContent = formatDate(achievement.date);
+                  achievementHeader.appendChild(date);
+                }
+                
+                achievementItem.appendChild(achievementHeader);
+                
+                if (achievement.description) {
+                  const description = document.createElement("p");
+                  description.className = "item-details";
+                  description.textContent = achievement.description;
+                  achievementItem.appendChild(description);
+                }
+                
+                achievementsSection.appendChild(achievementItem);
+              });
+              
+              container.appendChild(achievementsSection);
+            }
+            
+            // Activities Section
+            if (resumeData.activities.length > 0) {
+              const activitiesSection = document.createElement("div");
+              activitiesSection.className = "section";
+              
+              const activitiesTitle = document.createElement("h2");
+              activitiesTitle.className = "section-title";
+              activitiesTitle.textContent = "Extracurricular Activities";
+              activitiesSection.appendChild(activitiesTitle);
+              
+              resumeData.activities.forEach(activity => {
+                const activityItem = document.createElement("div");
+                activityItem.className = "item";
+                
+                const activityHeader = document.createElement("div");
+                activityHeader.className = "item-header";
+                
+                const title = document.createElement("h3");
+                title.className = "item-title";
+                title.textContent = activity.title;
+                activityHeader.appendChild(title);
+                
+                if (activity.startDate || activity.endDate) {
+                  const dates = document.createElement("span");
+                  dates.className = "item-date";
+                  dates.textContent = \`\${formatDate(activity.startDate)} - \${activity.endDate ? formatDate(activity.endDate) : "Present"}\`;
+                  activityHeader.appendChild(dates);
+                }
+                
+                activityItem.appendChild(activityHeader);
+                
+                if (activity.organization) {
+                  const organization = document.createElement("p");
+                  organization.className = "item-subtitle";
+                  organization.textContent = activity.organization;
+                  activityItem.appendChild(organization);
+                }
+                
+                if (activity.description) {
+                  const description = document.createElement("p");
+                  description.className = "item-details";
+                  description.textContent = activity.description;
+                  activityItem.appendChild(description);
+                }
+                
+                activitiesSection.appendChild(activityItem);
+              });
+              
+              container.appendChild(activitiesSection);
+            }
+            
+            // Hobbies Section
+            if (resumeData.hobbies.length > 0) {
+              const hobbiesSection = document.createElement("div");
+              hobbiesSection.className = "section";
+              
+              const hobbiesTitle = document.createElement("h2");
+              hobbiesTitle.className = "section-title";
+              hobbiesTitle.textContent = "Hobbies & Interests";
+              hobbiesSection.appendChild(hobbiesTitle);
+              
+              const hobbies = document.createElement("p");
+              hobbies.className = "item-details";
+              hobbies.textContent = resumeData.hobbies.map(h => h.name).join(", ");
+              hobbiesSection.appendChild(hobbies);
+              
+              container.appendChild(hobbiesSection);
+            }
+          }
+          
+          buildResume();
+        </script>
+      </body>
+      </html>
+    `;
+
+    // Write the HTML content to the new window
+    newWindow.document.write(htmlContent);
+    newWindow.document.close();
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -106,13 +729,23 @@ const GeneratePDF = () => {
           <p className="mb-4">
             Review your resume and generate a PDF version that you can download and share.
           </p>
-          <div className="flex justify-between">
+          <div className="flex justify-between flex-wrap gap-2">
             <Button variant="outline" onClick={handlePrevStep}>
               Previous
             </Button>
-            <Button onClick={handleGeneratePDF} className="bg-resume-primary hover:bg-resume-accent">
-              Generate PDF
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={openPreviewInNewTab} 
+                variant="outline" 
+                className="flex items-center gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open in New Tab
+              </Button>
+              <Button onClick={handleGeneratePDF} className="bg-resume-primary hover:bg-resume-accent">
+                Generate PDF
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -382,4 +1015,3 @@ const GeneratePDF = () => {
 };
 
 export default GeneratePDF;
-
