@@ -1,3 +1,4 @@
+
 import React, { useRef } from "react";
 import { useResume } from "@/context/ResumeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +51,7 @@ const GeneratePDF = () => {
       
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      const margin = 10;
+      const margin = 1;
       const contentWidth = pdfWidth - (2 * margin);
       const contentHeight = pdfHeight - (2 * margin);
       
@@ -84,6 +85,95 @@ const GeneratePDF = () => {
     }
   };
 
+  const openResumeInNewTab = () => {
+    if (!resumeRef.current) return;
+    
+    // Create a new window/tab
+    const newWindow = window.open('', '_blank');
+    
+    if (!newWindow) {
+      toast("Popup Blocked", {
+        description: "Please allow popups to open the resume in a new tab.",
+      });
+      return;
+    }
+    
+    // Get the HTML content of the resume
+    const resumeHTML = resumeRef.current.outerHTML;
+    
+    // Add basic styling to make it look good
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${resumeData.personalInfo.firstName} ${resumeData.personalInfo.lastName} - Resume</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+        <style>
+          body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+          }
+          .resume-container {
+            background-color: white;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          @media print {
+            body {
+              background-color: white;
+              padding: 0;
+            }
+            .resume-container {
+              box-shadow: none;
+              max-width: 100%;
+              padding: 10px;
+            }
+            .no-print {
+              display: none;
+            }
+          }
+          .print-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+          }
+          .print-button:hover {
+            background-color: #1d4ed8;
+          }
+        </style>
+      </head>
+      <body>
+        <button class="print-button no-print" onclick="window.print()">Print Resume</button>
+        <div class="resume-container">
+          ${resumeHTML}
+        </div>
+      </body>
+      </html>
+    `;
+    
+    // Write the HTML content to the new window
+    newWindow.document.open();
+    newWindow.document.write(htmlContent);
+    newWindow.document.close();
+    
+    toast("Resume Opened", {
+      description: "Your resume has been opened in a new tab.",
+    });
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -105,13 +195,18 @@ const GeneratePDF = () => {
           <p className="mb-4">
             Review your resume and generate a PDF version that you can download and share.
           </p>
-          <div className="flex justify-between">
+          <div className="flex flex-wrap gap-3 justify-between">
             <Button variant="outline" onClick={handlePrevStep}>
               Previous
             </Button>
-            <Button onClick={handleGeneratePDF} className="bg-resume-primary hover:bg-resume-accent">
-              Generate PDF
-            </Button>
+            <div className="flex gap-3">
+              <Button onClick={openResumeInNewTab} variant="outline" className="border-resume-primary text-resume-primary hover:bg-resume-primary hover:text-white">
+                Open in New Tab
+              </Button>
+              <Button onClick={handleGeneratePDF} className="bg-resume-primary hover:bg-resume-accent">
+                Generate PDF
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
