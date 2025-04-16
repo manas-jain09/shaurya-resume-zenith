@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import { toast } from "@/hooks/use-toast";
 
 const GeneratePDF = () => {
   const { resumeData, setCurrentStep } = useResume();
@@ -17,42 +18,93 @@ const GeneratePDF = () => {
   const handleGeneratePDF = async () => {
     if (!resumeRef.current) return;
 
-    const resumeElement = resumeRef.current;
-    const canvas = await html2canvas(resumeElement, { 
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: "#ffffff"
-    });
-    const imgData = canvas.toDataURL("image/png");
-    
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-    
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-    let heightLeft = imgHeight;
-    let position = 0;
-    
-    // Add first page
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pdfHeight;
-    
-    // Add new pages if content overflows
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
+    try {
+      toast({
+        title: "Generating PDF",
+        description: "Please wait while we generate your PDF...",
+      });
+      
+      const resumeElement = resumeRef.current;
+      
+      // Better quality settings for PDF generation
+      const canvas = await html2canvas(resumeElement, { 
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        windowWidth: 800,
+        windowHeight: 1131, // A4 height in px at 96 DPI
+      });
+      
+      const imgData = canvas.toDataURL("image/png", 1.0); // Use higher quality
+      
+      // Use A4 dimensions
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      let imgY = 0;
+      
+      // Calculate total content height in PDF pages
+      const totalPages = Math.ceil(imgHeight * ratio / pdfHeight);
+      
+      // Add pages one by one
+      for (let i = 0; i < totalPages; i++) {
+        if (i > 0) {
+          pdf.addPage();
+        }
+        
+        // For each page, calculate the part of the image to render
+        const sourceY = i * pdfHeight / ratio;
+        const sourceHeight = Math.min(pdfHeight / ratio, imgHeight - sourceY);
+        
+        pdf.addImage(
+          imgData, 
+          "PNG", 
+          imgX, 
+          imgY, 
+          imgWidth * ratio, 
+          imgHeight * ratio,
+          "", 
+          "FAST",
+          0,
+          {
+            sourceX: 0,
+            sourceY: sourceY,
+            sourceWidth: imgWidth,
+            sourceHeight: sourceHeight
+          }
+        );
+      }
+      
+      // Save the file
+      pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
+      
+      toast({
+        title: "PDF Generated",
+        description: "Your resume PDF has been successfully generated!",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      toast({
+        title: "PDF Generation Failed",
+        description: "There was an error generating your PDF. Please try again.",
+        variant: "destructive",
+      });
     }
-    
-    pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
   };
 
   const formatDate = (dateString: string) => {
@@ -90,7 +142,7 @@ const GeneratePDF = () => {
       <div 
         className="bg-white shadow-lg p-8 mb-8 w-[210mm] mx-auto" 
         ref={resumeRef} 
-        style={{ minHeight: '297mm', maxWidth: '100%' }}
+        style={{ minHeight: '297mm', maxWidth: '100%', boxSizing: 'border-box' }}
       >
         {/* Header / Personal Info */}
         <div className="border-b-2 border-resume-primary pb-4 mb-6">
