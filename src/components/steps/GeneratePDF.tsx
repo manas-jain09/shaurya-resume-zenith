@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { useResume } from "@/context/ResumeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -116,6 +115,8 @@ const GeneratePDF = () => {
             background-color: #f5f5f5;
             margin: 0;
             padding: 20px;
+            color: #333;
+            line-height: 1.5;
           }
           .resume-container {
             background-color: white;
@@ -123,6 +124,81 @@ const GeneratePDF = () => {
             margin: 0 auto;
             padding: 30px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          }
+          h1 {
+            color: #2563EB;
+            margin-top: 0;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+          }
+          h2 {
+            color: #2563EB;
+            border-bottom: 1px solid #2563EB;
+            padding-bottom: 5px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: 600;
+          }
+          h3 {
+            margin-bottom: 5px;
+            font-size: 16px;
+            font-weight: 600;
+          }
+          p {
+            margin-top: 0;
+            margin-bottom: 8px;
+          }
+          ul {
+            padding-left: 20px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+          }
+          li {
+            margin-bottom: 3px;
+          }
+          .section {
+            margin-bottom: 15px;
+          }
+          .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+          }
+          .date {
+            color: #666;
+            font-size: 14px;
+            white-space: nowrap;
+          }
+          .organization {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 5px;
+          }
+          .skill-tag {
+            display: inline-block;
+            background-color: #f0f4ff;
+            color: #2563EB;
+            border-radius: 4px;
+            padding: 2px 8px;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            font-size: 12px;
+          }
+          .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+          }
+          .contact-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+          }
+          .contact-item svg {
+            margin-right: 5px;
           }
           @media print {
             body {
@@ -136,6 +212,10 @@ const GeneratePDF = () => {
             }
             .no-print {
               display: none;
+            }
+            a {
+              text-decoration: none;
+              color: #333;
             }
           }
           .print-button {
@@ -153,6 +233,11 @@ const GeneratePDF = () => {
           .print-button:hover {
             background-color: #1d4ed8;
           }
+          .resume-header {
+            border-bottom: 2px solid #2563EB;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+          }
         </style>
       </head>
       <body>
@@ -160,6 +245,22 @@ const GeneratePDF = () => {
         <div class="resume-container">
           ${resumeHTML}
         </div>
+        <script>
+          // Convert the basic structure to use our custom CSS classes
+          document.addEventListener('DOMContentLoaded', function() {
+            // Apply classes to contact info
+            const contactDivs = document.querySelectorAll('.resume-container > div > div:nth-child(1) > div');
+            if (contactDivs.length > 0) {
+              contactDivs[0].className = 'contact-info';
+              
+              // Update skill tags
+              const skillTags = document.querySelectorAll('[class*="bg-gray-100 px-2 py-0.5"]');
+              skillTags.forEach(tag => {
+                tag.className = 'skill-tag';
+              });
+            }
+          });
+        </script>
       </body>
       </html>
     `;
@@ -170,7 +271,7 @@ const GeneratePDF = () => {
     newWindow.document.close();
     
     toast("Resume Opened", {
-      description: "Your resume has been opened in a new tab.",
+      description: "Your resume has been opened in a new tab with improved formatting.",
     });
   };
 
@@ -232,7 +333,7 @@ const GeneratePDF = () => {
             )}
             {resumeData.personalInfo.phone && (
               <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
                 {resumeData.personalInfo.phone}
@@ -256,7 +357,7 @@ const GeneratePDF = () => {
             )}
             {resumeData.personalInfo.website && (
               <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                 </svg>
                 {resumeData.personalInfo.website}
