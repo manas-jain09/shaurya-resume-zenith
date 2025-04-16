@@ -1,11 +1,10 @@
-
 import React, { useRef } from "react";
 import { useResume } from "@/context/ResumeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/sonner";
 
 const GeneratePDF = () => {
   const { resumeData, setCurrentStep } = useResume();
@@ -70,39 +69,36 @@ const GeneratePDF = () => {
         const sourceY = i * pdfHeight / ratio;
         const sourceHeight = Math.min(pdfHeight / ratio, imgHeight - sourceY);
         
-        pdf.addImage(
-          imgData, 
-          "PNG", 
-          imgX, 
-          imgY, 
-          imgWidth * ratio, 
-          imgHeight * ratio,
-          "", 
-          "FAST",
-          0,
-          {
-            sourceX: 0,
-            sourceY: sourceY,
-            sourceWidth: imgWidth,
-            sourceHeight: sourceHeight
-          }
-        );
+        // Fix: Remove the 10th argument and use proper options structure
+        pdf.addImage({
+          imageData: imgData,
+          format: "PNG", 
+          x: imgX, 
+          y: imgY, 
+          width: imgWidth * ratio, 
+          height: imgHeight * ratio,
+          compression: "FAST",
+          rotation: 0,
+          sourceX: 0,
+          sourceY: sourceY,
+          sourceWidth: imgWidth,
+          sourceHeight: sourceHeight
+        });
       }
       
       // Save the file
       pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
       
+      // Fix: Use a valid variant - change "success" to "default"
       toast({
         title: "PDF Generated",
         description: "Your resume PDF has been successfully generated!",
-        variant: "success",
       });
     } catch (error) {
       console.error("PDF generation error:", error);
       toast({
         title: "PDF Generation Failed",
         description: "There was an error generating your PDF. Please try again.",
-        variant: "destructive",
       });
     }
   };
