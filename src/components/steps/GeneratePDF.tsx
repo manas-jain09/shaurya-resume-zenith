@@ -50,7 +50,7 @@ const GeneratePDF = () => {
       
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      const margin = 10;
+      const margin = 5 * 2.83465; 
       const contentWidth = pdfWidth - (2 * margin);
       const contentHeight = pdfHeight - (2 * margin);
       
@@ -63,8 +63,8 @@ const GeneratePDF = () => {
       pdf.addImage({
         imageData: imgData,
         format: "PNG", 
-        x: pdfWidth, 
-        y: pdfHeight, 
+        x: imgX, 
+        y: imgY, 
         width: scaledImgWidth,
         height: scaledImgHeight,
         compression: "FAST",
