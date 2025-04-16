@@ -1,11 +1,334 @@
-
 import React, { useRef } from "react";
 import { useResume } from "@/context/ResumeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import { toast } from "sonner";
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+
+Font.register({
+  family: 'Inter',
+  fonts: [
+    { src: 'https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2', fontWeight: 400 },
+    { src: 'https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2', fontWeight: 500 },
+    { src: 'https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7SUc.woff2', fontWeight: 700 },
+  ]
+});
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    fontFamily: 'Inter',
+    fontSize: 10,
+  },
+  section: {
+    marginBottom: 10,
+  },
+  header: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#3B82F6',
+    borderBottomStyle: 'solid',
+    paddingBottom: 10,
+    marginBottom: 15,
+  },
+  name: {
+    fontSize: 24,
+    fontWeight: 700,
+    color: '#3B82F6',
+    marginBottom: 5,
+  },
+  contactInfo: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 5,
+    color: '#4B5563',
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#3B82F6',
+    borderBottomWidth: 1,
+    borderBottomColor: '#3B82F6',
+    borderBottomStyle: 'solid',
+    paddingBottom: 3,
+    marginBottom: 8,
+  },
+  itemTitle: {
+    fontSize: 12,
+    fontWeight: 700,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  itemSubtitle: {
+    fontSize: 11,
+    fontWeight: 500,
+    marginBottom: 2,
+  },
+  date: {
+    fontSize: 10,
+    color: '#6B7280',
+  },
+  description: {
+    fontSize: 10,
+    marginBottom: 2,
+    lineHeight: 1.4,
+  },
+  bulletList: {
+    marginLeft: 10,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  bulletItem: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  bullet: {
+    width: 10,
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 10,
+    lineHeight: 1.4,
+  },
+  technologies: {
+    fontSize: 9,
+    marginTop: 2,
+  },
+  techLabel: {
+    fontWeight: 700,
+  },
+  skillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 5,
+  },
+  skillItem: {
+    backgroundColor: '#F3F4F6',
+    padding: '3 6',
+    borderRadius: 4,
+    fontSize: 9,
+  },
+  hobbies: {
+    fontSize: 10,
+  },
+});
+
+const ResumePDF = ({ resumeData }) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+    });
+  };
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.name}>
+            {resumeData.personalInfo.firstName} {resumeData.personalInfo.lastName}
+          </Text>
+          <View style={styles.contactInfo}>
+            {resumeData.personalInfo.email && (
+              <View style={styles.contactItem}>
+                <Text>{resumeData.personalInfo.email}</Text>
+              </View>
+            )}
+            {resumeData.personalInfo.phone && (
+              <View style={styles.contactItem}>
+                <Text>{resumeData.personalInfo.phone}</Text>
+              </View>
+            )}
+            {resumeData.personalInfo.linkedin && (
+              <View style={styles.contactItem}>
+                <Text>{resumeData.personalInfo.linkedin}</Text>
+              </View>
+            )}
+            {resumeData.personalInfo.github && (
+              <View style={styles.contactItem}>
+                <Text>{resumeData.personalInfo.github}</Text>
+              </View>
+            )}
+            {resumeData.personalInfo.website && (
+              <View style={styles.contactItem}>
+                <Text>{resumeData.personalInfo.website}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {resumeData.personalInfo.summary && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Professional Summary</Text>
+            <Text style={styles.description}>{resumeData.personalInfo.summary}</Text>
+          </View>
+        )}
+
+        {resumeData.education.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Education</Text>
+            {resumeData.education.map((edu) => (
+              <View key={edu.id} style={{ marginBottom: 6 }}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle}>{edu.degree}</Text>
+                  <Text style={styles.date}>
+                    {formatDate(edu.startDate)} - {edu.endDate ? formatDate(edu.endDate) : "Present"}
+                  </Text>
+                </View>
+                <Text style={styles.itemSubtitle}>{edu.institution}{edu.location ? `, ${edu.location}` : ""}</Text>
+                {edu.grade && <Text style={styles.description}>Grade: {edu.grade}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {resumeData.experience.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Experience</Text>
+            {resumeData.experience.map((exp) => (
+              <View key={exp.id} style={{ marginBottom: 8 }}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle}>{exp.title}</Text>
+                  <Text style={styles.date}>
+                    {formatDate(exp.startDate)} - {exp.endDate ? formatDate(exp.endDate) : "Present"}
+                  </Text>
+                </View>
+                <Text style={styles.itemSubtitle}>{exp.company}{exp.location ? `, ${exp.location}` : ""}</Text>
+                {exp.description.length > 0 && (
+                  <View style={styles.bulletList}>
+                    {exp.description.map((desc, index) => (
+                      <View key={index} style={styles.bulletItem}>
+                        <Text style={styles.bullet}>• </Text>
+                        <Text style={styles.bulletText}>{desc}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {exp.technologies?.length > 0 && (
+                  <Text style={styles.technologies}>
+                    <Text style={styles.techLabel}>Technologies: </Text>
+                    {exp.technologies.join(", ")}
+                  </Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {resumeData.projects.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Projects</Text>
+            {resumeData.projects.map((project) => (
+              <View key={project.id} style={{ marginBottom: 6 }}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle}>{project.title}</Text>
+                  <Text style={styles.date}>
+                    {formatDate(project.startDate)} - {project.endDate ? formatDate(project.endDate) : "Present"}
+                  </Text>
+                </View>
+                <Text style={styles.description}>{project.description}</Text>
+                {project.technologies?.length > 0 && (
+                  <Text style={styles.technologies}>
+                    <Text style={styles.techLabel}>Technologies: </Text>
+                    {project.technologies.join(", ")}
+                  </Text>
+                )}
+                {project.link && (
+                  <Text style={styles.technologies}>
+                    <Text style={styles.techLabel}>Link: </Text>
+                    {project.link}
+                  </Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {resumeData.skills.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Skills</Text>
+            <View style={styles.skillsContainer}>
+              {resumeData.skills.map((skill) => (
+                <View key={skill.id} style={styles.skillItem}>
+                  <Text>{skill.name}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {resumeData.positions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Positions of Responsibility</Text>
+            {resumeData.positions.map((position) => (
+              <View key={position.id} style={{ marginBottom: 6 }}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle}>{position.title}</Text>
+                  <Text style={styles.date}>
+                    {formatDate(position.startDate)} - {position.endDate ? formatDate(position.endDate) : "Present"}
+                  </Text>
+                </View>
+                <Text style={styles.itemSubtitle}>{position.organization}</Text>
+                {position.description && <Text style={styles.description}>{position.description}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {resumeData.achievements.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Achievements</Text>
+            {resumeData.achievements.map((achievement) => (
+              <View key={achievement.id} style={{ marginBottom: 6 }}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle}>{achievement.title}</Text>
+                  {achievement.date && (
+                    <Text style={styles.date}>{formatDate(achievement.date)}</Text>
+                  )}
+                </View>
+                {achievement.description && <Text style={styles.description}>{achievement.description}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {resumeData.activities.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Extracurricular Activities</Text>
+            {resumeData.activities.map((activity) => (
+              <View key={activity.id} style={{ marginBottom: 6 }}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemTitle}>{activity.title}</Text>
+                  <Text style={styles.date}>
+                    {formatDate(activity.startDate)} - {activity.endDate ? formatDate(activity.endDate) : "Present"}
+                  </Text>
+                </View>
+                {activity.organization && <Text style={styles.itemSubtitle}>{activity.organization}</Text>}
+                {activity.description && <Text style={styles.description}>{activity.description}</Text>}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {resumeData.hobbies.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Hobbies & Interests</Text>
+            <Text style={styles.hobbies}>{resumeData.hobbies.map((h) => h.name).join(", ")}</Text>
+          </View>
+        )}
+      </Page>
+    </Document>
+  );
+};
 
 const GeneratePDF = () => {
   const { resumeData, setCurrentStep } = useResume();
@@ -13,76 +336,6 @@ const GeneratePDF = () => {
 
   const handlePrevStep = () => {
     setCurrentStep(8);
-  };
-
-  const handleGeneratePDF = async () => {
-    if (!resumeRef.current) return;
-
-    try {
-      toast("Generating PDF", {
-        description: "Please wait while we generate your PDF...",
-      });
-      
-      const resumeElement = resumeRef.current;
-      
-      const canvas = await html2canvas(resumeElement, { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: 800,
-        windowHeight: 1131,
-      });
-      
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-        compress: true,
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      
-      const margin = 0; // Changed to 1mm as requested
-      const contentWidth = pdfWidth - (2 * margin);
-      const contentHeight = pdfHeight - (2 * margin);
-      
-      const scaledImgWidth = imgWidth * ratio;
-      const scaledImgHeight = imgHeight * ratio;
-      
-      const imgX = margin + (contentWidth - scaledImgWidth) / 2;
-      const imgY = margin + (contentHeight - scaledImgHeight) / 2;
-      
-      pdf.addImage({
-        imageData: imgData,
-        format: "PNG", 
-        x: imgX, 
-        y: imgY, 
-        width: scaledImgWidth,
-        height: scaledImgHeight,
-        compression: "FAST",
-        rotation: 0
-      });
-      
-      pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
-      
-      toast("PDF Generated", {
-        description: "Your resume PDF has been successfully generated!",
-      });
-    } catch (error) {
-      console.error("PDF generation error:", error);
-      toast("PDF Generation Failed", {
-        description: "There was an error generating your PDF. Please try again.",
-      });
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -110,9 +363,15 @@ const GeneratePDF = () => {
             <Button variant="outline" onClick={handlePrevStep}>
               Previous
             </Button>
-            <Button onClick={handleGeneratePDF} className="bg-resume-primary hover:bg-resume-accent">
-              Generate PDF
-            </Button>
+            <PDFDownloadLink 
+              document={<ResumePDF resumeData={resumeData} />} 
+              fileName={`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`}
+              className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-resume-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-resume-accent transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-resume-primary disabled:pointer-events-none disabled:opacity-50"
+            >
+              {({ blob, url, loading, error }) =>
+                loading ? 'Preparing PDF...' : 'Download PDF'
+              }
+            </PDFDownloadLink>
           </div>
         </CardContent>
       </Card>
@@ -122,7 +381,6 @@ const GeneratePDF = () => {
         ref={resumeRef} 
         style={{ minHeight: '297mm', maxWidth: '100%', boxSizing: 'border-box' }}
       >
-        {/* Header / Personal Info */}
         <div className="border-b-2 border-resume-primary pb-4 mb-6">
           <h1 className="text-3xl font-bold text-resume-primary">
             {resumeData.personalInfo.firstName} {resumeData.personalInfo.lastName}
@@ -171,7 +429,6 @@ const GeneratePDF = () => {
           </div>
         </div>
 
-        {/* Summary */}
         {resumeData.personalInfo.summary && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -181,7 +438,6 @@ const GeneratePDF = () => {
           </div>
         )}
 
-        {/* Education */}
         {resumeData.education.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -206,7 +462,6 @@ const GeneratePDF = () => {
           </div>
         )}
 
-        {/* Experience */}
         {resumeData.experience.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -242,7 +497,6 @@ const GeneratePDF = () => {
           </div>
         )}
 
-        {/* Projects */}
         {resumeData.projects.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -276,7 +530,6 @@ const GeneratePDF = () => {
           </div>
         )}
 
-        {/* Skills */}
         {resumeData.skills.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -295,7 +548,6 @@ const GeneratePDF = () => {
           </div>
         )}
 
-        {/* Positions */}
         {resumeData.positions.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -320,7 +572,6 @@ const GeneratePDF = () => {
           </div>
         )}
 
-        {/* Achievements */}
         {resumeData.achievements.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -342,7 +593,6 @@ const GeneratePDF = () => {
           </div>
         )}
 
-        {/* Activities */}
         {resumeData.activities.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -367,7 +617,6 @@ const GeneratePDF = () => {
           </div>
         )}
 
-        {/* Hobbies */}
         {resumeData.hobbies.length > 0 && (
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-resume-primary border-b mb-2 pb-1">
@@ -382,4 +631,3 @@ const GeneratePDF = () => {
 };
 
 export default GeneratePDF;
-
