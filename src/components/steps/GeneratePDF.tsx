@@ -252,6 +252,8 @@ const GeneratePDF = () => {
             body {
               background: none;
               padding: 0;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
             
             .container {
@@ -262,6 +264,11 @@ const GeneratePDF = () => {
             
             .print-button {
               display: none;
+            }
+            
+            @page {
+              margin: 0;
+              size: auto;
             }
           }
         </style>
