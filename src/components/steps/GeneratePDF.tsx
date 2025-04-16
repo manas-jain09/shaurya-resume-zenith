@@ -24,19 +24,17 @@ const GeneratePDF = () => {
       
       const resumeElement = resumeRef.current;
       
-      // Better quality settings for PDF generation
       const canvas = await html2canvas(resumeElement, { 
-        scale: 2, // Higher scale for better quality
+        scale: 2, 
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
         windowWidth: 800,
-        windowHeight: 1131, // A4 height in px at 96 DPI
+        windowHeight: 1131,
       });
       
-      const imgData = canvas.toDataURL("image/png", 1.0); // Use higher quality
+      const imgData = canvas.toDataURL("image/png", 1.0);
       
-      // Use A4 dimensions
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -52,39 +50,33 @@ const GeneratePDF = () => {
       
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      let imgY = 0;
+      const imgX = 0;
+      const imgY = 0;
       
-      // Calculate total content height in PDF pages
       const totalPages = Math.ceil(imgHeight * ratio / pdfHeight);
       
-      // Add pages one by one
       for (let i = 0; i < totalPages; i++) {
         if (i > 0) {
           pdf.addPage();
         }
         
-        // For each page, calculate the part of the image to render
         const sourceY = i * pdfHeight / ratio;
         const sourceHeight = Math.min(pdfHeight / ratio, imgHeight - sourceY);
         
-        // Fix: Use only valid properties for the ImageOptions object
         pdf.addImage({
           imageData: imgData,
           format: "PNG", 
           x: imgX, 
           y: imgY, 
-          width: imgWidth * ratio, 
+          width: pdfWidth,
           height: imgHeight * ratio,
           compression: "FAST",
           rotation: 0
         });
       }
       
-      // Save the file
       pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
       
-      // Fix: Use the correct toast format for sonner
       toast("PDF Generated", {
         description: "Your resume PDF has been successfully generated!",
       });
@@ -174,7 +166,7 @@ const GeneratePDF = () => {
             {resumeData.personalInfo.website && (
               <span className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                 </svg>
                 {resumeData.personalInfo.website}
               </span>
