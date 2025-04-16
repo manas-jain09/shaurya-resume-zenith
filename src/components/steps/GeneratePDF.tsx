@@ -51,7 +51,7 @@ const GeneratePDF = () => {
       
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      const margin = 5 * 2.83465; // Changed to 1mm as requested
+      const margin = 0; // Changed to 1mm as requested
       const contentWidth = pdfWidth - (2 * margin);
       const contentHeight = pdfHeight - (2 * margin);
       
