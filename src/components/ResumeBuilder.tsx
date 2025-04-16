@@ -14,38 +14,55 @@ import HobbiesForm from "./steps/HobbiesForm";
 import GeneratePDF from "./steps/GeneratePDF";
 
 const ResumeBuilder = () => {
-  const { currentStep } = useResume();
+  const { currentStep, setCurrentStep, resumeData } = useResume();
+
+  const steps = [
+    { name: "Personal Information", component: PersonalInfoForm },
+    { name: "Education", component: EducationForm },
+    { name: "Experience", component: ExperienceForm },
+    { name: "Skills", component: SkillsForm },
+    { name: "Projects", component: ProjectsForm },
+    { name: "Positions", component: PositionsForm },
+    { name: "Achievements", component: AchievementsForm },
+    { name: "Activities", component: ActivitiesForm },
+    { name: "Hobbies", component: HobbiesForm },
+    { name: "Generate PDF", component: GeneratePDF },
+  ];
+
+  const handleNavigation = (stepIndex: number) => {
+    setCurrentStep(stepIndex);
+  };
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 0:
-        return <PersonalInfoForm />;
-      case 1:
-        return <EducationForm />;
-      case 2:
-        return <ExperienceForm />;
-      case 3:
-        return <SkillsForm />;
-      case 4:
-        return <ProjectsForm />;
-      case 5:
-        return <PositionsForm />;
-      case 6:
-        return <AchievementsForm />;
-      case 7:
-        return <ActivitiesForm />;
-      case 8:
-        return <HobbiesForm />;
-      case 9:
-        return <GeneratePDF />;
-      default:
-        return <PersonalInfoForm />;
-    }
+    const Component = steps[currentStep].component;
+    return <Component />;
   };
 
   return (
     <Layout>
-      {renderStep()}
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="md:w-1/4 bg-white rounded-lg shadow-md p-4 h-fit">
+          <h2 className="text-lg font-semibold mb-3 text-resume-primary">Navigation</h2>
+          <div className="space-y-1">
+            {steps.map((step, index) => (
+              <button
+                key={index}
+                onClick={() => handleNavigation(index)}
+                className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                  currentStep === index
+                    ? "bg-resume-primary text-white font-medium"
+                    : "hover:bg-gray-100"
+                }`}
+              >
+                {step.name}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="md:w-3/4">
+          {renderStep()}
+        </div>
+      </div>
     </Layout>
   );
 };
