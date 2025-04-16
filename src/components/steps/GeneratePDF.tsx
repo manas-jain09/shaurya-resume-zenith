@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import { toast } from "sonner";
-import { ExternalLink } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const GeneratePDF = () => {
   const { resumeData, setCurrentStep } = useResume();
@@ -20,23 +19,26 @@ const GeneratePDF = () => {
     if (!resumeRef.current) return;
 
     try {
-      toast("Generating PDF", {
+      toast({
+        title: "Generating PDF",
         description: "Please wait while we generate your PDF...",
       });
       
       const resumeElement = resumeRef.current;
       
+      // Better quality settings for PDF generation
       const canvas = await html2canvas(resumeElement, { 
-        scale: 2, 
+        scale: 2, // Higher scale for better quality
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
         windowWidth: 800,
-        windowHeight: 1131,
+        windowHeight: 1131, // A4 height in px at 96 DPI
       });
       
-      const imgData = canvas.toDataURL("image/png", 1.0);
+      const imgData = canvas.toDataURL("image/png", 1.0); // Use higher quality
       
+      // Use A4 dimensions
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -52,699 +54,57 @@ const GeneratePDF = () => {
       
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      const margin = 1; // Changed to 1mm as requested
-      const contentWidth = pdfWidth - (2 * margin);
-      const contentHeight = pdfHeight - (2 * margin);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      let imgY = 0;
       
-      const scaledImgWidth = imgWidth * ratio;
-      const scaledImgHeight = imgHeight * ratio;
+      // Calculate total content height in PDF pages
+      const totalPages = Math.ceil(imgHeight * ratio / pdfHeight);
       
-      const imgX = margin + (contentWidth - scaledImgWidth) / 2;
-      const imgY = margin + (contentHeight - scaledImgHeight) / 2;
+      // Add pages one by one
+      for (let i = 0; i < totalPages; i++) {
+        if (i > 0) {
+          pdf.addPage();
+        }
+        
+        // For each page, calculate the part of the image to render
+        const sourceY = i * pdfHeight / ratio;
+        const sourceHeight = Math.min(pdfHeight / ratio, imgHeight - sourceY);
+        
+        pdf.addImage(
+          imgData, 
+          "PNG", 
+          imgX, 
+          imgY, 
+          imgWidth * ratio, 
+          imgHeight * ratio,
+          "", 
+          "FAST",
+          0,
+          {
+            sourceX: 0,
+            sourceY: sourceY,
+            sourceWidth: imgWidth,
+            sourceHeight: sourceHeight
+          }
+        );
+      }
       
-      pdf.addImage({
-        imageData: imgData,
-        format: "PNG", 
-        x: imgX, 
-        y: imgY, 
-        width: scaledImgWidth,
-        height: scaledImgHeight,
-        compression: "FAST",
-        rotation: 0
-      });
-      
+      // Save the file
       pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
       
-      toast("PDF Generated", {
+      toast({
+        title: "PDF Generated",
         description: "Your resume PDF has been successfully generated!",
+        variant: "success",
       });
     } catch (error) {
       console.error("PDF generation error:", error);
-      toast("PDF Generation Failed", {
+      toast({
+        title: "PDF Generation Failed",
         description: "There was an error generating your PDF. Please try again.",
+        variant: "destructive",
       });
     }
-  };
-
-  const openPreviewInNewTab = () => {
-    // Serialize the resume data to pass to the new window
-    const resumeDataString = JSON.stringify(resumeData);
-    
-    // Open a new window and write the HTML content
-    const newWindow = window.open('', '_blank');
-    if (!newWindow) {
-      toast("Preview Failed", {
-        description: "Could not open a new window. Please check your browser settings.",
-      });
-      return;
-    }
-
-    // Create HTML content for the new window
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${resumeData.personalInfo.firstName} ${resumeData.personalInfo.lastName} - Resume</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-          
-          * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-          }
-          
-          body {
-            background-color: #f5f5f5;
-            padding: 2rem;
-          }
-          
-          .container {
-            max-width: 210mm;
-            margin: 0 auto;
-            background: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
-          }
-          
-          .header {
-            border-bottom: 2px solid #2563eb;
-            padding-bottom: 1rem;
-            margin-bottom: 1.5rem;
-          }
-          
-          h1 {
-            font-size: 1.75rem;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 0.5rem;
-          }
-          
-          .contact-info {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            font-size: 0.875rem;
-          }
-          
-          .contact-item {
-            display: flex;
-            align-items: center;
-          }
-          
-          .contact-item svg {
-            width: 16px;
-            height: 16px;
-            margin-right: 6px;
-            color: #4b5563;
-            min-width: 16px;
-          }
-          
-          .section {
-            margin-bottom: 1.5rem;
-          }
-          
-          .section-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #2563eb;
-            border-bottom: 1px solid #e5e7eb;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.25rem;
-          }
-          
-          .item {
-            margin-bottom: 0.75rem;
-          }
-          
-          .item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-          }
-          
-          .item-title {
-            font-weight: 500;
-            font-size: 1rem;
-          }
-          
-          .item-date {
-            font-size: 0.75rem;
-            color: #4b5563;
-          }
-          
-          .item-subtitle {
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-          }
-          
-          .item-details {
-            font-size: 0.875rem;
-          }
-          
-          ul {
-            padding-left: 1.5rem;
-          }
-          
-          li {
-            font-size: 0.875rem;
-            line-height: 1.4;
-            margin-bottom: 0.25rem;
-          }
-          
-          .technologies {
-            font-size: 0.75rem;
-            margin-top: 0.25rem;
-          }
-          
-          .skills-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.375rem;
-            list-style-type: none;
-            padding-left: 0;
-          }
-          
-          .skill-item {
-            background-color: #f3f4f6;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-          }
-          
-          .print-button {
-            display: block;
-            margin: 1rem auto;
-            padding: 0.5rem 1rem;
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 0.25rem;
-            font-weight: 500;
-            cursor: pointer;
-          }
-          
-          @media print {
-            body {
-              background: none;
-              padding: 0;
-            }
-            
-            .container {
-              box-shadow: none;
-              max-width: 100%;
-              padding: 0.5cm;
-            }
-            
-            .print-button {
-              display: none;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <button class="print-button" onclick="window.print()">Print Resume</button>
-        <div class="container">
-          <div id="resume-content"></div>
-        </div>
-        
-        <script>
-          const resumeData = ${resumeDataString};
-          
-          function formatDate(dateString) {
-            if (!dateString) return "";
-            const date = new Date(dateString);
-            return date.toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-            });
-          }
-          
-          function buildResume() {
-            const container = document.getElementById("resume-content");
-            
-            // Header Section
-            const header = document.createElement("div");
-            header.className = "header";
-            
-            const name = document.createElement("h1");
-            name.textContent = \`\${resumeData.personalInfo.firstName} \${resumeData.personalInfo.lastName}\`;
-            header.appendChild(name);
-            
-            const contactInfo = document.createElement("div");
-            contactInfo.className = "contact-info";
-            
-            if (resumeData.personalInfo.email) {
-              const email = document.createElement("span");
-              email.className = "contact-item";
-              email.innerHTML = \`
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="20" height="16" x="2" y="4" rx="2" />
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                </svg>
-                \${resumeData.personalInfo.email}
-              \`;
-              contactInfo.appendChild(email);
-            }
-            
-            if (resumeData.personalInfo.phone) {
-              const phone = document.createElement("span");
-              phone.className = "contact-item";
-              phone.innerHTML = \`
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
-                \${resumeData.personalInfo.phone}
-              \`;
-              contactInfo.appendChild(phone);
-            }
-            
-            if (resumeData.personalInfo.linkedin) {
-              const linkedin = document.createElement("span");
-              linkedin.className = "contact-item";
-              linkedin.innerHTML = \`
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                  <rect width="4" height="12" x="2" y="9" />
-                  <circle cx="4" cy="4" r="2" />
-                </svg>
-                \${resumeData.personalInfo.linkedin}
-              \`;
-              contactInfo.appendChild(linkedin);
-            }
-            
-            if (resumeData.personalInfo.github) {
-              const github = document.createElement("span");
-              github.className = "contact-item";
-              github.innerHTML = \`
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-                  <path d="M9 18c-4.51 2-5-2-7-2" />
-                </svg>
-                \${resumeData.personalInfo.github}
-              \`;
-              contactInfo.appendChild(github);
-            }
-            
-            if (resumeData.personalInfo.website) {
-              const website = document.createElement("span");
-              website.className = "contact-item";
-              website.innerHTML = \`
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="2" x2="22" y1="12" y2="12" />
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                </svg>
-                \${resumeData.personalInfo.website}
-              \`;
-              contactInfo.appendChild(website);
-            }
-            
-            header.appendChild(contactInfo);
-            container.appendChild(header);
-            
-            // Summary Section
-            if (resumeData.personalInfo.summary) {
-              const summarySection = document.createElement("div");
-              summarySection.className = "section";
-              
-              const summaryTitle = document.createElement("h2");
-              summaryTitle.className = "section-title";
-              summaryTitle.textContent = "Professional Summary";
-              summarySection.appendChild(summaryTitle);
-              
-              const summary = document.createElement("p");
-              summary.className = "item-details";
-              summary.textContent = resumeData.personalInfo.summary;
-              summarySection.appendChild(summary);
-              
-              container.appendChild(summarySection);
-            }
-            
-            // Education Section
-            if (resumeData.education.length > 0) {
-              const educationSection = document.createElement("div");
-              educationSection.className = "section";
-              
-              const educationTitle = document.createElement("h2");
-              educationTitle.className = "section-title";
-              educationTitle.textContent = "Education";
-              educationSection.appendChild(educationTitle);
-              
-              resumeData.education.forEach(edu => {
-                const eduItem = document.createElement("div");
-                eduItem.className = "item";
-                
-                const eduHeader = document.createElement("div");
-                eduHeader.className = "item-header";
-                
-                const degree = document.createElement("h3");
-                degree.className = "item-title";
-                degree.textContent = edu.degree;
-                eduHeader.appendChild(degree);
-                
-                if (edu.startDate || edu.endDate) {
-                  const dates = document.createElement("span");
-                  dates.className = "item-date";
-                  dates.textContent = \`\${formatDate(edu.startDate)} - \${edu.endDate ? formatDate(edu.endDate) : "Present"}\`;
-                  eduHeader.appendChild(dates);
-                }
-                
-                eduItem.appendChild(eduHeader);
-                
-                const institution = document.createElement("p");
-                institution.className = "item-subtitle";
-                institution.textContent = \`\${edu.institution}\${edu.location ? \`, \${edu.location}\` : ""}\`;
-                eduItem.appendChild(institution);
-                
-                if (edu.grade) {
-                  const grade = document.createElement("p");
-                  grade.className = "item-details";
-                  grade.textContent = \`Grade: \${edu.grade}\`;
-                  eduItem.appendChild(grade);
-                }
-                
-                educationSection.appendChild(eduItem);
-              });
-              
-              container.appendChild(educationSection);
-            }
-            
-            // Experience Section
-            if (resumeData.experience.length > 0) {
-              const experienceSection = document.createElement("div");
-              experienceSection.className = "section";
-              
-              const experienceTitle = document.createElement("h2");
-              experienceTitle.className = "section-title";
-              experienceTitle.textContent = "Experience";
-              experienceSection.appendChild(experienceTitle);
-              
-              resumeData.experience.forEach(exp => {
-                const expItem = document.createElement("div");
-                expItem.className = "item";
-                
-                const expHeader = document.createElement("div");
-                expHeader.className = "item-header";
-                
-                const title = document.createElement("h3");
-                title.className = "item-title";
-                title.textContent = exp.title;
-                expHeader.appendChild(title);
-                
-                if (exp.startDate || exp.endDate) {
-                  const dates = document.createElement("span");
-                  dates.className = "item-date";
-                  dates.textContent = \`\${formatDate(exp.startDate)} - \${exp.endDate ? formatDate(exp.endDate) : "Present"}\`;
-                  expHeader.appendChild(dates);
-                }
-                
-                expItem.appendChild(expHeader);
-                
-                const company = document.createElement("p");
-                company.className = "item-subtitle";
-                company.textContent = \`\${exp.company}\${exp.location ? \`, \${exp.location}\` : ""}\`;
-                expItem.appendChild(company);
-                
-                if (exp.description && exp.description.length > 0) {
-                  const descList = document.createElement("ul");
-                  exp.description.forEach(desc => {
-                    const descItem = document.createElement("li");
-                    descItem.textContent = desc;
-                    descList.appendChild(descItem);
-                  });
-                  expItem.appendChild(descList);
-                }
-                
-                if (exp.technologies && exp.technologies.length > 0) {
-                  const tech = document.createElement("p");
-                  tech.className = "technologies";
-                  tech.innerHTML = \`<strong>Technologies:</strong> \${exp.technologies.join(", ")}\`;
-                  expItem.appendChild(tech);
-                }
-                
-                experienceSection.appendChild(expItem);
-              });
-              
-              container.appendChild(experienceSection);
-            }
-            
-            // Projects Section
-            if (resumeData.projects.length > 0) {
-              const projectsSection = document.createElement("div");
-              projectsSection.className = "section";
-              
-              const projectsTitle = document.createElement("h2");
-              projectsTitle.className = "section-title";
-              projectsTitle.textContent = "Projects";
-              projectsSection.appendChild(projectsTitle);
-              
-              resumeData.projects.forEach(project => {
-                const projectItem = document.createElement("div");
-                projectItem.className = "item";
-                
-                const projectHeader = document.createElement("div");
-                projectHeader.className = "item-header";
-                
-                const title = document.createElement("h3");
-                title.className = "item-title";
-                title.textContent = project.title;
-                projectHeader.appendChild(title);
-                
-                if (project.startDate || project.endDate) {
-                  const dates = document.createElement("span");
-                  dates.className = "item-date";
-                  dates.textContent = \`\${formatDate(project.startDate)} - \${project.endDate ? formatDate(project.endDate) : "Present"}\`;
-                  projectHeader.appendChild(dates);
-                }
-                
-                projectItem.appendChild(projectHeader);
-                
-                const description = document.createElement("p");
-                description.className = "item-details";
-                description.textContent = project.description;
-                projectItem.appendChild(description);
-                
-                if (project.technologies && project.technologies.length > 0) {
-                  const tech = document.createElement("p");
-                  tech.className = "technologies";
-                  tech.innerHTML = \`<strong>Technologies:</strong> \${project.technologies.join(", ")}\`;
-                  projectItem.appendChild(tech);
-                }
-                
-                if (project.link) {
-                  const link = document.createElement("p");
-                  link.className = "technologies";
-                  link.innerHTML = \`<strong>Link:</strong> \${project.link}\`;
-                  projectItem.appendChild(link);
-                }
-                
-                projectsSection.appendChild(projectItem);
-              });
-              
-              container.appendChild(projectsSection);
-            }
-            
-            // Skills Section
-            if (resumeData.skills.length > 0) {
-              const skillsSection = document.createElement("div");
-              skillsSection.className = "section";
-              
-              const skillsTitle = document.createElement("h2");
-              skillsTitle.className = "section-title";
-              skillsTitle.textContent = "Skills";
-              skillsSection.appendChild(skillsTitle);
-              
-              const skillsList = document.createElement("ul");
-              skillsList.className = "skills-list";
-              
-              resumeData.skills.forEach(skill => {
-                const skillItem = document.createElement("li");
-                skillItem.className = "skill-item";
-                skillItem.textContent = skill.name;
-                skillsList.appendChild(skillItem);
-              });
-              
-              skillsSection.appendChild(skillsList);
-              container.appendChild(skillsSection);
-            }
-            
-            // Positions Section
-            if (resumeData.positions.length > 0) {
-              const positionsSection = document.createElement("div");
-              positionsSection.className = "section";
-              
-              const positionsTitle = document.createElement("h2");
-              positionsTitle.className = "section-title";
-              positionsTitle.textContent = "Positions of Responsibility";
-              positionsSection.appendChild(positionsTitle);
-              
-              resumeData.positions.forEach(position => {
-                const positionItem = document.createElement("div");
-                positionItem.className = "item";
-                
-                const positionHeader = document.createElement("div");
-                positionHeader.className = "item-header";
-                
-                const title = document.createElement("h3");
-                title.className = "item-title";
-                title.textContent = position.title;
-                positionHeader.appendChild(title);
-                
-                if (position.startDate || position.endDate) {
-                  const dates = document.createElement("span");
-                  dates.className = "item-date";
-                  dates.textContent = \`\${formatDate(position.startDate)} - \${position.endDate ? formatDate(position.endDate) : "Present"}\`;
-                  positionHeader.appendChild(dates);
-                }
-                
-                positionItem.appendChild(positionHeader);
-                
-                const organization = document.createElement("p");
-                organization.className = "item-subtitle";
-                organization.textContent = position.organization;
-                positionItem.appendChild(organization);
-                
-                if (position.description) {
-                  const description = document.createElement("p");
-                  description.className = "item-details";
-                  description.textContent = position.description;
-                  positionItem.appendChild(description);
-                }
-                
-                positionsSection.appendChild(positionItem);
-              });
-              
-              container.appendChild(positionsSection);
-            }
-            
-            // Achievements Section
-            if (resumeData.achievements.length > 0) {
-              const achievementsSection = document.createElement("div");
-              achievementsSection.className = "section";
-              
-              const achievementsTitle = document.createElement("h2");
-              achievementsTitle.className = "section-title";
-              achievementsTitle.textContent = "Achievements";
-              achievementsSection.appendChild(achievementsTitle);
-              
-              resumeData.achievements.forEach(achievement => {
-                const achievementItem = document.createElement("div");
-                achievementItem.className = "item";
-                
-                const achievementHeader = document.createElement("div");
-                achievementHeader.className = "item-header";
-                
-                const title = document.createElement("h3");
-                title.className = "item-title";
-                title.textContent = achievement.title;
-                achievementHeader.appendChild(title);
-                
-                if (achievement.date) {
-                  const date = document.createElement("span");
-                  date.className = "item-date";
-                  date.textContent = formatDate(achievement.date);
-                  achievementHeader.appendChild(date);
-                }
-                
-                achievementItem.appendChild(achievementHeader);
-                
-                if (achievement.description) {
-                  const description = document.createElement("p");
-                  description.className = "item-details";
-                  description.textContent = achievement.description;
-                  achievementItem.appendChild(description);
-                }
-                
-                achievementsSection.appendChild(achievementItem);
-              });
-              
-              container.appendChild(achievementsSection);
-            }
-            
-            // Activities Section
-            if (resumeData.activities.length > 0) {
-              const activitiesSection = document.createElement("div");
-              activitiesSection.className = "section";
-              
-              const activitiesTitle = document.createElement("h2");
-              activitiesTitle.className = "section-title";
-              activitiesTitle.textContent = "Extracurricular Activities";
-              activitiesSection.appendChild(activitiesTitle);
-              
-              resumeData.activities.forEach(activity => {
-                const activityItem = document.createElement("div");
-                activityItem.className = "item";
-                
-                const activityHeader = document.createElement("div");
-                activityHeader.className = "item-header";
-                
-                const title = document.createElement("h3");
-                title.className = "item-title";
-                title.textContent = activity.title;
-                activityHeader.appendChild(title);
-                
-                if (activity.startDate || activity.endDate) {
-                  const dates = document.createElement("span");
-                  dates.className = "item-date";
-                  dates.textContent = \`\${formatDate(activity.startDate)} - \${activity.endDate ? formatDate(activity.endDate) : "Present"}\`;
-                  activityHeader.appendChild(dates);
-                }
-                
-                activityItem.appendChild(activityHeader);
-                
-                if (activity.organization) {
-                  const organization = document.createElement("p");
-                  organization.className = "item-subtitle";
-                  organization.textContent = activity.organization;
-                  activityItem.appendChild(organization);
-                }
-                
-                if (activity.description) {
-                  const description = document.createElement("p");
-                  description.className = "item-details";
-                  description.textContent = activity.description;
-                  activityItem.appendChild(description);
-                }
-                
-                activitiesSection.appendChild(activityItem);
-              });
-              
-              container.appendChild(activitiesSection);
-            }
-            
-            // Hobbies Section
-            if (resumeData.hobbies.length > 0) {
-              const hobbiesSection = document.createElement("div");
-              hobbiesSection.className = "section";
-              
-              const hobbiesTitle = document.createElement("h2");
-              hobbiesTitle.className = "section-title";
-              hobbiesTitle.textContent = "Hobbies & Interests";
-              hobbiesSection.appendChild(hobbiesTitle);
-              
-              const hobbies = document.createElement("p");
-              hobbies.className = "item-details";
-              hobbies.textContent = resumeData.hobbies.map(h => h.name).join(", ");
-              hobbiesSection.appendChild(hobbies);
-              
-              container.appendChild(hobbiesSection);
-            }
-          }
-          
-          buildResume();
-        </script>
-      </body>
-      </html>
-    `;
-
-    // Write the HTML content to the new window
-    newWindow.document.write(htmlContent);
-    newWindow.document.close();
   };
 
   const formatDate = (dateString: string) => {
@@ -768,23 +128,13 @@ const GeneratePDF = () => {
           <p className="mb-4">
             Review your resume and generate a PDF version that you can download and share.
           </p>
-          <div className="flex justify-between flex-wrap gap-2">
+          <div className="flex justify-between">
             <Button variant="outline" onClick={handlePrevStep}>
               Previous
             </Button>
-            <div className="flex gap-2">
-              <Button 
-                onClick={openPreviewInNewTab} 
-                variant="outline" 
-                className="flex items-center gap-2"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Open in New Tab
-              </Button>
-              <Button onClick={handleGeneratePDF} className="bg-resume-primary hover:bg-resume-accent">
-                Generate PDF
-              </Button>
-            </div>
+            <Button onClick={handleGeneratePDF} className="bg-resume-primary hover:bg-resume-accent">
+              Generate PDF
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -835,7 +185,7 @@ const GeneratePDF = () => {
             {resumeData.personalInfo.website && (
               <span className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                 </svg>
                 {resumeData.personalInfo.website}
               </span>
