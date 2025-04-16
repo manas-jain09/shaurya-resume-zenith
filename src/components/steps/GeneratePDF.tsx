@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import { useResume } from "@/context/ResumeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,15 +50,15 @@ const GeneratePDF = () => {
       
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      const margin = 1; // Changed to 1mm as requested
-      const contentWidth = pdfWidth - (1 * margin);
-      const contentHeight = pdfHeight - (1 * margin);
+      const margin = 10;
+      const contentWidth = pdfWidth - (2 * margin);
+      const contentHeight = pdfHeight - (2 * margin);
       
       const scaledImgWidth = imgWidth * ratio;
       const scaledImgHeight = imgHeight * ratio;
       
-      const imgX = margin;
-      const imgY = margin;
+      const imgX = margin + (contentWidth - scaledImgWidth) / 2;
+      const imgY = margin + (contentHeight - scaledImgHeight) / 2;
       
       pdf.addImage({
         imageData: imgData,
@@ -382,4 +381,3 @@ const GeneratePDF = () => {
 };
 
 export default GeneratePDF;
-
