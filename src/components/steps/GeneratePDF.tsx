@@ -63,8 +63,8 @@ const GeneratePDF = () => {
       pdf.addImage({
         imageData: imgData,
         format: "PNG", 
-        x: imgX, 
-        y: imgY, 
+        x: pdfWidth, 
+        y: pdfHeight, 
         width: scaledImgWidth,
         height: scaledImgHeight,
         compression: "FAST",
