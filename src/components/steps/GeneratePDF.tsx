@@ -39,7 +39,7 @@ const GeneratePDF = () => {
         orientation: "portrait",
         unit: "mm",
         format: "a4",
-        compress: true,
+        compress: false,
       });
       
       const pdfWidth = pdf.internal.pageSize.getWidth();
