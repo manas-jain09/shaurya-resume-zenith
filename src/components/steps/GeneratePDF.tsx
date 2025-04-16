@@ -1,16 +1,18 @@
+
 import React, { useRef } from "react";
 import { useResume } from "@/context/ResumeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Font } from '@react-pdf/renderer';
 
+// Register fonts with local paths instead of remote URLs
 Font.register({
   family: 'Inter',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2', fontWeight: 500 },
-    { src: 'https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7SUc.woff2', fontWeight: 700 },
+    { src: '/fonts/Inter-Regular.ttf', fontWeight: 400 },
+    { src: '/fonts/Inter-Medium.ttf', fontWeight: 500 },
+    { src: '/fonts/Inter-Bold.ttf', fontWeight: 700 },
   ]
 });
 
@@ -216,7 +218,7 @@ const ResumePDF = ({ resumeData }) => {
                 {exp.technologies?.length > 0 && (
                   <Text style={styles.technologies}>
                     <Text style={styles.techLabel}>Technologies: </Text>
-                    {exp.technologies.join(", ")}
+                    <Text>{exp.technologies.join(", ")}</Text>
                   </Text>
                 )}
               </View>
@@ -239,13 +241,13 @@ const ResumePDF = ({ resumeData }) => {
                 {project.technologies?.length > 0 && (
                   <Text style={styles.technologies}>
                     <Text style={styles.techLabel}>Technologies: </Text>
-                    {project.technologies.join(", ")}
+                    <Text>{project.technologies.join(", ")}</Text>
                   </Text>
                 )}
                 {project.link && (
                   <Text style={styles.technologies}>
                     <Text style={styles.techLabel}>Link: </Text>
-                    {project.link}
+                    <Text>{project.link}</Text>
                   </Text>
                 )}
               </View>
@@ -363,15 +365,22 @@ const GeneratePDF = () => {
             <Button variant="outline" onClick={handlePrevStep}>
               Previous
             </Button>
-            <PDFDownloadLink 
-              document={<ResumePDF resumeData={resumeData} />} 
-              fileName={`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`}
-              className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-resume-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-resume-accent transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-resume-primary disabled:pointer-events-none disabled:opacity-50"
+            
+            <Button
+              variant="default"
+              className="bg-resume-primary hover:bg-resume-accent"
+              onClick={() => {
+                toast.info("Your resume will be downloaded shortly.");
+              }}
             >
-              {({ blob, url, loading, error }) =>
-                loading ? 'Preparing PDF...' : 'Download PDF'
-              }
-            </PDFDownloadLink>
+              <PDFDownloadLink
+                document={<ResumePDF resumeData={resumeData} />}
+                fileName={`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`}
+                className="text-white"
+              >
+                {({ loading }) => (loading ? 'Preparing PDF...' : 'Download PDF')}
+              </PDFDownloadLink>
+            </Button>
           </div>
         </CardContent>
       </Card>
