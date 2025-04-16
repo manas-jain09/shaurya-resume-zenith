@@ -16,74 +16,99 @@ const GeneratePDF = () => {
   };
 
   const handleGeneratePDF = async () => {
-    if (!resumeRef.current) return;
+  if (!resumeRef.current) return;
 
-    try {
-      toast("Generating PDF", {
-        description: "Please wait while we generate your PDF...",
-      });
-      
-      const resumeElement = resumeRef.current;
-      
-      const canvas = await html2canvas(resumeElement, { 
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: 800,
-        windowHeight: 1131,
-      });
-      
-      const imgData = canvas.toDataURL("image/png", 1.0);
-      
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-        compress: true,
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      
-      const margin = 1; // Changed to 1mm as requested
-      const contentWidth = pdfWidth - (2 * margin);
-      const contentHeight = pdfHeight - (2 * margin);
-      
-      const scaledImgWidth = imgWidth * ratio;
-      const scaledImgHeight = imgHeight * ratio;
-      
-      const imgX = margin + (contentWidth - scaledImgWidth) / 2;
-      const imgY = margin + (contentHeight - scaledImgHeight) / 2;
-      
-      pdf.addImage({
-        imageData: imgData,
-        format: "PNG", 
-        x: imgX, 
-        y: imgY, 
-        width: scaledImgWidth,
-        height: scaledImgHeight,
-        compression: "FAST",
-        rotation: 0
-      });
-      
-      pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
-      
-      toast("PDF Generated", {
-        description: "Your resume PDF has been successfully generated!",
-      });
-    } catch (error) {
-      console.error("PDF generation error:", error);
-      toast("PDF Generation Failed", {
-        description: "There was an error generating your PDF. Please try again.",
-      });
+  try {
+    toast("Generating PDF", {
+      description: "Please wait while we generate your PDF...",
+    });
+
+    const resumeElement = resumeRef.current;
+
+    // Set dimensions for A4 (in px) at 96 DPI
+    const a4WidthPx = 794;  // ~210mm
+    const a4HeightPx = 1123; // ~297mm
+
+    const canvas = await html2canvas(resumeElement, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      windowWidth: resumeElement.scrollWidth,
+      windowHeight: resumeElement.scrollHeight,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const imgProps = {
+      width: canvas.width,
+      height: canvas.height,
+    };
+
+    const ratio = imgProps.width / imgProps.height;
+    const pageHeightPx = Math.floor((pdfHeight / pdfWidth) * imgProps.width); // proportional
+
+    let position = 0;
+
+    while (position < imgProps.height) {
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = imgProps.width;
+      pageCanvas.height = Math.min(pageHeightPx, imgProps.height - position);
+
+      const pageContext = pageCanvas.getContext("2d");
+      if (pageContext) {
+        pageContext.drawImage(
+          canvas,
+          0,
+          position,
+          imgProps.width,
+          pageCanvas.height,
+          0,
+          0,
+          imgProps.width,
+          pageCanvas.height
+        );
+      }
+
+      const pageImgData = pageCanvas.toDataURL("image/png");
+
+      const pageHeightMM = (pageCanvas.height * pdfWidth) / pageCanvas.width;
+
+      if (position !== 0) pdf.addPage();
+      pdf.addImage(
+        pageImgData,
+        "PNG",
+        0,
+        0,
+        pdfWidth,
+        pageHeightMM,
+      );
+
+      position += pageHeightPx;
     }
-  };
+
+    const fileName = `${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`;
+    pdf.save(fileName);
+
+    toast("PDF Generated", {
+      description: "Your resume PDF has been successfully generated!",
+    });
+  } catch (error) {
+    console.error("PDF generation error:", error);
+    toast("PDF Generation Failed", {
+      description: "There was an error generating your PDF. Please try again.",
+    });
+  }
+};
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
