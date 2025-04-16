@@ -58,8 +58,8 @@ const GeneratePDF = () => {
       const scaledImgWidth = imgWidth * ratio;
       const scaledImgHeight = imgHeight * ratio;
       
-      const imgX = margin + (contentWidth - scaledImgWidth) / 2;
-      const imgY = margin + (contentHeight - scaledImgHeight) / 2;
+      const imgX = margin;
+      const imgY = margin;
       
       pdf.addImage({
         imageData: imgData,
