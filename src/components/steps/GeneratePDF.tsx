@@ -7,15 +7,7 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { toast } from "sonner";
 
-const GeneratePDF = () => {
-  const { resumeData, setCurrentStep } = useResume();
-  const resumeRef = useRef<HTMLDivElement>(null);
-
-  const handlePrevStep = () => {
-    setCurrentStep(8);
-  };
-
-  const handleGeneratePDF = async () => {
+const handleGeneratePDF = async () => {
   if (!resumeRef.current) return;
 
   try {
@@ -25,40 +17,43 @@ const GeneratePDF = () => {
 
     const resumeElement = resumeRef.current;
 
-    // Set dimensions for A4 (in px) at 96 DPI
-    const a4WidthPx = 794;  // ~210mm
-    const a4HeightPx = 1123; // ~297mm
+    // Wait for fonts to be fully loaded
+    await document.fonts.ready;
 
+    // Generate high-quality canvas
     const canvas = await html2canvas(resumeElement, {
       scale: 2,
       useCORS: true,
-      logging: false,
       backgroundColor: "#ffffff",
+      removeContainer: true,
       windowWidth: resumeElement.scrollWidth,
       windowHeight: resumeElement.scrollHeight,
     });
 
     const imgData = canvas.toDataURL("image/png");
 
+    // Create a new jsPDF instance in A4 portrait format
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
       format: "a4",
     });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const pdfWidth = pdf.internal.pageSize.getWidth(); // A4 width in mm
+    const pdfHeight = pdf.internal.pageSize.getHeight(); // A4 height in mm
 
     const imgProps = {
       width: canvas.width,
       height: canvas.height,
     };
 
-    const ratio = imgProps.width / imgProps.height;
-    const pageHeightPx = Math.floor((pdfHeight / pdfWidth) * imgProps.width); // proportional
+    // Convert PDF dimensions from mm to pixels for slicing
+    const pxPerMm = imgProps.width / pdfWidth;
+    const pageHeightPx = Math.floor(pdfHeight * pxPerMm);
 
     let position = 0;
 
+    // Slice the canvas and add each slice as a new PDF page
     while (position < imgProps.height) {
       const pageCanvas = document.createElement("canvas");
       pageCanvas.width = imgProps.width;
@@ -80,18 +75,10 @@ const GeneratePDF = () => {
       }
 
       const pageImgData = pageCanvas.toDataURL("image/png");
-
       const pageHeightMM = (pageCanvas.height * pdfWidth) / pageCanvas.width;
 
       if (position !== 0) pdf.addPage();
-      pdf.addImage(
-        pageImgData,
-        "PNG",
-        0,
-        0,
-        pdfWidth,
-        pageHeightMM,
-      );
+      pdf.addImage(pageImgData, "PNG", 0, 0, pdfWidth, pageHeightMM);
 
       position += pageHeightPx;
     }
@@ -109,6 +96,7 @@ const GeneratePDF = () => {
     });
   }
 };
+
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
