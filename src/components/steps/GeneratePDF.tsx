@@ -50,30 +50,26 @@ const GeneratePDF = () => {
       
       const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
       
-      const imgX = 0;
-      const imgY = 0;
+      const margin = 10;
+      const contentWidth = pdfWidth - (2 * margin);
+      const contentHeight = pdfHeight - (2 * margin);
       
-      const totalPages = Math.ceil(imgHeight * ratio / pdfHeight);
+      const scaledImgWidth = imgWidth * ratio;
+      const scaledImgHeight = imgHeight * ratio;
       
-      for (let i = 0; i < totalPages; i++) {
-        if (i > 0) {
-          pdf.addPage();
-        }
-        
-        const sourceY = i * pdfHeight / ratio;
-        const sourceHeight = Math.min(pdfHeight / ratio, imgHeight - sourceY);
-        
-        pdf.addImage({
-          imageData: imgData,
-          format: "PNG", 
-          x: imgX, 
-          y: imgY, 
-          width: pdfWidth,
-          height: imgHeight * ratio,
-          compression: "FAST",
-          rotation: 0
-        });
-      }
+      const imgX = margin + (contentWidth - scaledImgWidth) / 2;
+      const imgY = margin + (contentHeight - scaledImgHeight) / 2;
+      
+      pdf.addImage({
+        imageData: imgData,
+        format: "PNG", 
+        x: imgX, 
+        y: imgY, 
+        width: scaledImgWidth,
+        height: scaledImgHeight,
+        compression: "FAST",
+        rotation: 0
+      });
       
       pdf.save(`${resumeData.personalInfo.firstName}_${resumeData.personalInfo.lastName}_Resume.pdf`);
       
